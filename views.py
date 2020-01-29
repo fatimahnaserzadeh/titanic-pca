@@ -1,13 +1,27 @@
 from flask import Flask,render_template,url_for,request
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt 
-import seaborn as sns
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import normalize
-import  matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import norm
+
+def kl_divergence(p,q):
+    return np.sum(np.where(np.logical_and(p!=0,q!=0),p*np.log(p/q),0))
+
+data= pd.read_csv('data/titanic.csv')
+data = data.dropna(subset=['Age'])
+
+count,devision = np.histogram(data.Age,bins = 8)
+data_norm = norm.rvs(size = len(data.Age),loc = data.Age.mean(),scale = data.Age.std())
+count2,devision2 = np.histogram(data_norm,bins=8)
+
+
+kl_divergence(count,count2)
+plt.title('KL')
+plt.plot(count,c = 'blue')
+plt.plot(count2,c='red')
+#accoding to the plot distribution of Age is not normal
+
+plt.savefig("./static/Figure_1.png")
 
 app = Flask(__name__)
 
@@ -25,52 +39,7 @@ def titanic():
 
 
 
-def preparing_data():
-    titanic = sns.load_dataset('titanic')
-    titanic = titanic.drop(['sex','embarked','class','who','adult_male','deck','embark_town','alive','alone'],axis = 1)
-    titanic['age'] = titanic['age'].fillna(method = 'ffill')
 
-    for label in ['pclass','age','sibsp','parch','fare']:
-        titanic[label] = LabelEncoder().fit_transform(titanic[label])
-    
-    labels = titanic['survived']
-    features = titanic.drop(['survived'],axis=1)
-    model = PCA(n_components=3)
-    model.fit(features)
-    X_3D = model.transform(features)
-    data = [X_3D,labels]
-    return data
-
-
-
-
-def display_data():
-    data = preparing_data()
-    labels = data[1]
-    X_3D = data[0]
-    live_x,live_y,live_z = X_3D[labels==1].T
-    dead_x,dead_y,dead_z = X_3D[labels==0].T
-
-    fig = plt.figure(figsize=(8,8))
-    ax = fig.add_subplot(111,projection='3d')
-
-    ax.scatter(live_x,live_y,live_z,c='r',
-    label='Casualties',marker='o')
-    ax.scatter(dead_x,dead_y,dead_z,c='b',label='Survivors',marker='^')
-    ax.legend()
-
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-
-    plt.savefig("./static/Figure_1.png")
-
-
-
-
-
-
-display_data()
 
 
 
